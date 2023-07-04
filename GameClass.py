@@ -1,4 +1,5 @@
 import random
+from collections import Counter
 
 # Number 1 corresponds to Ace
 CARDNAME = {1: "Ace", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven", 8: "Eight", 9: "Nine", 10: "Ten",
@@ -123,4 +124,15 @@ class TexasHoldEm(Game):
     
     def burnCard(self):
         self.deck.pop(0)
+
+    def evaluateHand(self, board, hand):
+        full = board + hand
+        suits = [card.suit for card in full]
+        numbers = sorted([card.number for card in full])
+        suitCounts = Counter(suits)
+        numberCounts = Counter(numbers)
+        if max(suitCounts.values()) >= 5:
+            #Flush
+        
+
     
