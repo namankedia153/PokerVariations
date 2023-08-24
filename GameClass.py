@@ -151,26 +151,27 @@ class TexasHoldEm(Game):
 
 
     def isSeq(self, cards):
-        full = list(set([card.number for card in cards]))
+        full = sorted(list(set([card.number for card in cards])), reverse = True)
         if len(full) < 5:
             return []
         final = []
         start = 0
-        end = 1
+        end = 0
         tmp = [full[start]]
-        while end != len(full):
-            if end - start == 4: # zero indexing means 4
-                final.append(tmp)
-                tmp.pop(0)
-                start += 1
-            if full[end] == tmp[-1] - 1:
+        while end != len(full) - 1:
+            end += 1
+            if full[end] == (tmp[-1] - 1):
                 tmp.append(full[end])
-                end += 1
             else:
                 start = end
-                tmp = []
-        if sum(full[:4] == 46) and full[-1] == 1:
-            final.insert([1, 13, 12, 11, 10], 0)
+                tmp = [full[start]]
+            if (end - start) == 4: # zero indexing means 4
+                final.append(tmp.copy())
+                tmp.pop(0)
+                start += 1
+# Check for ace at top
+        if sum(full[:4]) == 46 and full[-1] == 1:
+            final.insert(0, [1, 13, 12, 11, 10])
         return final
 
 
@@ -186,12 +187,15 @@ class TexasHoldEm(Game):
         index = 0
         straight_ind = 0
         for straight in straights:
+            print(straight)
             # at maximum there can be 3 aces while still having a straight 
             if straight[0] == 1:
                 index = -3
             while straight_ind != 5:
+                print("Card Index: " + str(index))
+                print("Straight Index: " + str(straight_ind))
                 curr = straight[straight_ind]
-                while straight_ind == 0 and cards[index] != curr:
+                while straight_ind == 0 and cards[index].number != curr:
                     index += 1
                 if cards[index].suit == flushSuit:
                     straight_ind += 1
@@ -208,18 +212,18 @@ class TexasHoldEm(Game):
 
 
 
-    def evaluateHand(self, board, hand):
-        full = board + hand
-        full = sorted(full, reverse = True, key= (lambda x: x.number))
-        possibleHands = list(range(10))
-        suits = [card.suit for card in full]
-        numbers = sorted([card.number for card in full])
-        suitCounts = Counter(suits)
-        numberCounts = Counter(numbers)
-        maxSuit = max(suitCounts.values())
-        maxNum = max(numberCounts.values())
+    # def evaluateHand(self, board, hand):
+    #     full = board + hand
+    #     full = sorted(full, reverse = True, key= (lambda x: x.number))
+    #     possibleHands = list(range(10))
+    #     suits = [card.suit for card in full]
+    #     numbers = sorted([card.number for card in full])
+    #     suitCounts = Counter(suits)
+    #     numberCounts = Counter(numbers)
+    #     maxSuit = max(suitCounts.values())
+    #     maxNum = max(numberCounts.values())
 
-        # make a list of functions to evaluate on the output to stop nesting if else statements
+    #     # make a list of functions to evaluate on the output to stop nesting if else statements
         
             
         
