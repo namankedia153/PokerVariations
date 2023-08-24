@@ -6,6 +6,9 @@ CARDNAME = {1: "Ace", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "
             11: "Jack", 12: "Queen", 13: "King"}
 SUITDICT = {0: "Spades", 1: "Hearts", 2: "Diamonds", 3: "Clubs"}
 
+HANDRANKING = {9: "Royal Flush", 8: "Straight Flush", 7: "Four of a Kind", 6: "Full House", 5: "Flush", 4: "Straight",
+               3: "Three of a Kind", 2: "Two Pair", 1: "Pair", 0: "High Card"}
+
 class Card(object):
     def __init__(self, suit, number):
         if number > 0 and number <= 13:
@@ -125,14 +128,100 @@ class TexasHoldEm(Game):
     def burnCard(self):
         self.deck.pop(0)
 
+
+# Add cards to an output which is a straight dont check for flush here. if you count later you can get flush. do all possible straight combinations outputted here. Return them sorted.
+    # def isSeq(self, cards):
+    #     start = 0
+    #     end = 0
+    #     full = sorted(cards, reverse = True, key= (lambda x: x.number))
+    #     # Ace can go front or back
+    #     if full[-1].number == 1:
+    #         full.insert(Card(full[-1].suit, 1), 0)
+    #     max = full[0]
+    #     prev = full[0]
+    #     for i in range(1,len(full)):
+    #         if prev.number == full[i].number:
+    #             continue
+    #         elif prev.number == full[i].number + 1 or (prev.number == 1 and full[i].number == 13):
+    #             count += 1
+    #         else:
+
+    #         if count == 5:
+    #             straight = True 
+
+
+    def isSeq(self, cards):
+        full = list(set([card.number for card in cards]))
+        if len(full) < 5:
+            return []
+        final = []
+        start = 0
+        end = 1
+        tmp = [full[start]]
+        while end != len(full):
+            if end - start == 4: # zero indexing means 4
+                final.append(tmp)
+                tmp.pop(0)
+                start += 1
+            if full[end] == tmp[-1] - 1:
+                tmp.append(full[end])
+                end += 1
+            else:
+                start = end
+                tmp = []
+        if sum(full[:4] == 46) and full[-1] == 1:
+            final.insert([1, 13, 12, 11, 10], 0)
+        return final
+
+
+
+
+# Function for evaluating highest straight combinations and includes straight flushes.
+
+    def checkStraightFlush(self,  straights, cards, suitCounts):
+        fail = (False, None)
+        if len(straights) == 0:
+            return fail
+        flushSuit = max(suitCounts, key = lambda x: suitCounts[x])
+        index = 0
+        straight_ind = 0
+        for straight in straights:
+            # at maximum there can be 3 aces while still having a straight 
+            if straight[0] == 1:
+                index = -3
+            while straight_ind != 5:
+                curr = straight[straight_ind]
+                while straight_ind == 0 and cards[index] != curr:
+                    index += 1
+                if cards[index].suit == flushSuit:
+                    straight_ind += 1
+                    index += 1
+                elif cards[index].number == cards[index + 1].number:
+                    index += 1
+                else:
+                    index = 0
+                    straight_ind = 0
+                    break
+            if straight_ind == 5:
+                return (True, straight[0])
+        return fail
+
+
+
     def evaluateHand(self, board, hand):
         full = board + hand
+        full = sorted(full, reverse = True, key= (lambda x: x.number))
+        possibleHands = list(range(10))
         suits = [card.suit for card in full]
         numbers = sorted([card.number for card in full])
         suitCounts = Counter(suits)
         numberCounts = Counter(numbers)
-        if max(suitCounts.values()) >= 5:
-            #Flush
+        maxSuit = max(suitCounts.values())
+        maxNum = max(numberCounts.values())
+
+        # make a list of functions to evaluate on the output to stop nesting if else statements
+        
+            
         
 
     
