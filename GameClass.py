@@ -212,17 +212,45 @@ class TexasHoldEm(Game):
 
 
 
-    # def evaluateHand(self, board, hand):
-    #     full = board + hand
-    #     full = sorted(full, reverse = True, key= (lambda x: x.number))
-    #     possibleHands = list(range(10))
-    #     suits = [card.suit for card in full]
-    #     numbers = sorted([card.number for card in full])
-    #     suitCounts = Counter(suits)
-    #     numberCounts = Counter(numbers)
-    #     maxSuit = max(suitCounts.values())
-    #     maxNum = max(numberCounts.values())
-
+    def evaluateHand(self, board, hand):
+        full = board + hand
+        full = sorted(full, reverse = True, key= (lambda x: x.number))
+        possibleHands = list(range(10))
+        suits = [card.suit for card in full]
+        numbers = sorted([card.number for card in full])
+        suitCounts = Counter(suits)
+        numberCounts = Counter(numbers)
+        maxSuit = max(suitCounts.values())
+        maxNums = sorted(numberCounts.values(), reverse = True)[:2]
+        straights = self.isSeq(full)
+        if maxSuit >= 5:  
+            if len(straights) == 0:
+                return ### Flush
+            else:
+                seq, straight_max = self.checkStraightFlush(straights, full, suitCounts)
+                if seq:
+                    if straight_max == 1:
+                        return ### Royal Flush
+                    else:
+                        return ### Straight Flush
+        else:
+            if len(straights) > 0:
+                return ### Straight
+            else:
+                if maxNums[0] == 4:
+                    return ### Four of a Kind
+                elif maxNums[0] == 3:
+                    if maxNums[1] >= 2:
+                        return ### Full House
+                    else:
+                        return ### Three of a Kind
+                elif maxNums[0] == 2:
+                    if maxNums[1] >= 2:
+                        return ### Two Pair
+                    else:
+                        return ### Pair
+                else:
+                    return ### High Card
     #     # make a list of functions to evaluate on the output to stop nesting if else statements
         
             
