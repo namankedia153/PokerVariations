@@ -28,6 +28,12 @@ class Card(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+    
+    def getNum(self):
+        return self.number
+
+    def getSuit(self):
+        return self.suit
 
 
 class Player(object):
@@ -62,8 +68,12 @@ class Game(object):
         self.players = {}
         self.playerQueue = []
         self.pot = 0
+        self.rbet = 0
     
     def addPlayer(self, name):
+        if len(self.playerQueue) == 9:
+            print("Cannot add any more players")
+            return
         if name not in self.players:
             self.players[name] = []
             self.playerQueue.append(Player(name))
@@ -80,9 +90,9 @@ class Game(object):
     def shuffleDeck(self):
         random.shuffle(self.deck)
     
-    def dealHand(self, numCards):
-        if numCards*len(self.players.keys()) > len(self.deck):
-            raise ValueError("Too few cards")
+    def dealHand(self, numCards, numBoard):
+        if numCards*len(self.players.keys()) > len(self.deck) - numBoard:
+            raise ValueError("Too many cards per person")
         else:
             self.shuffleDeck()
             total = numCards*len(self.players.keys())
@@ -100,6 +110,8 @@ class Game(object):
 
     def resetGame(self):
         self.deck = []
+        self.pot = 0
+        self.rbet = 0
         for i in range(4):
             for j in range(1, 13):
                 self.deck.append(Card(i,j))
@@ -120,7 +132,7 @@ class TexasHoldEm(Game):
         return "Texas Hold'em Poker"
 
     def dealHand(self):
-        return super().dealHand(2)
+        return super().dealHand(2, 5)
     
     def openCard(self):
         self.board.append(self.deck.pop(0))
@@ -128,6 +140,9 @@ class TexasHoldEm(Game):
     def burnCard(self):
         self.deck.pop(0)
 
+    def fold(self, player):
+        self.playerQueue.pop(player)
+        ## must add them back to queue later
 
 # Add cards to an output which is a straight dont check for flush here. if you count later you can get flush. do all possible straight combinations outputted here. Return them sorted.
     # def isSeq(self, cards):
@@ -151,7 +166,7 @@ class TexasHoldEm(Game):
 
 
     def isSeq(self, cards):
-        full = sorted(list(set([card.number for card in cards])), reverse = True)
+        full = sorted(list(set([card.getNum() for card in cards])), reverse = True)
         if len(full) < 5:
             return []
         final = []
@@ -195,6 +210,7 @@ class TexasHoldEm(Game):
                 print("Card Index: " + str(index))
                 print("Straight Index: " + str(straight_ind))
                 curr = straight[straight_ind]
+                # finds starting point
                 while straight_ind == 0 and cards[index].number != curr:
                     index += 1
                 if cards[index].suit == flushSuit:
@@ -205,7 +221,7 @@ class TexasHoldEm(Game):
                 else:
                     index = 0
                     straight_ind = 0
-                    break
+                    break #break is used because there might be other possible straight flushes
             if straight_ind == 5:
                 return (True, straight[0])
         return fail
@@ -215,7 +231,7 @@ class TexasHoldEm(Game):
     def evaluateHand(self, board, hand):
         full = board + hand
         full = sorted(full, reverse = True, key= (lambda x: x.number))
-        possibleHands = list(range(10))
+        highesthand = 0
         suits = [card.suit for card in full]
         numbers = sorted([card.number for card in full])
         suitCounts = Counter(suits)
@@ -225,35 +241,64 @@ class TexasHoldEm(Game):
         straights = self.isSeq(full)
         if maxSuit >= 5:  
             if len(straights) == 0:
-                return ### Flush
+                highesthand = 5 ### Flush
             else:
                 seq, straight_max = self.checkStraightFlush(straights, full, suitCounts)
                 if seq:
                     if straight_max == 1:
-                        return ### Royal Flush
+                        highesthand = 9 ### Royal Flush
                     else:
-                        return ### Straight Flush
+                        highesthand = 8 ### Straight Flush
         else:
             if len(straights) > 0:
-                return ### Straight
+                highesthand = 4 ### Straight
             else:
                 if maxNums[0] == 4:
-                    return ### Four of a Kind
+                    highesthand = 7 ### Four of a Kind
                 elif maxNums[0] == 3:
                     if maxNums[1] >= 2:
-                        return ### Full House
+                        highesthand = 6 ### Full House
                     else:
-                        return ### Three of a Kind
+                        highesthand = 3 ### Three of a Kind
                 elif maxNums[0] == 2:
                     if maxNums[1] >= 2:
-                        return ### Two Pair
+                        highesthand = 2 ### Two Pair
                     else:
-                        return ### Pair
-                else:
-                    return ### High Card
+                        highesthand = 1 ### Pair
+        
+        return(highesthand, full)
     #     # make a list of functions to evaluate on the output to stop nesting if else statements
         
-            
-        
+    def compareHands(self):
+        player = self.playerQueue.pop(0)
+        otherplayers = []        
+        rank, full = self.evaluateHand(self.board, player.hand)
+        while self.playerQueue != []:
+            newplayer = self.playerQueue.pop(0)
+            newrank, newfull = self.evaluateHand(self.board, newplayer.hand)
+            if newrank < rank:
+                continue
+            elif newrank > rank:
+                rank = newrank
+                player = newplayer
+                full = newfull
+                otherplayers.clear()
+            else:
+                res = self.evaluateDeadlock(rank, full, newfull)
+                if res == 0:
+                    continue
+                elif res == 1:
+                    rank = newrank
+                    player = newplayer
+                    full = newfull
+                else:
+                    otherplayers.append(newplayer)
+        return [player] + otherplayers
+    # Change ACE to 14 because it will help in evaluating for high card
 
-    
+
+    def evaluateDeadlock(self, rank, full, newfull):
+        pass
+
+    def gameFlow(self):
+        pass
